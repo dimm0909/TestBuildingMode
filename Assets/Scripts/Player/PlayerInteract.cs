@@ -11,7 +11,6 @@ namespace Player
     public class PlayerInteract : MonoBehaviour
     {
         internal const float USAGE_DISTANCE = 5f;
-        internal bool mayUseItem = false;
 
         [SerializeField] private GameObject _uiTip;
 
@@ -21,12 +20,11 @@ namespace Player
         private void Awake()
         {
             _camera = GetComponent<Camera>();
-            mayUseItem = false;
             _itemToInteract = null;
-            _uiTip.SetActive(false);
+            ShowTip(false);
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             Vector3 point = new Vector3(_camera.pixelWidth / 2, _camera.pixelHeight / 2, 0);
             Ray ray = _camera.ScreenPointToRay(point);
@@ -35,34 +33,30 @@ namespace Player
             if (Physics.Raycast(ray, out hit, USAGE_DISTANCE))
             {
                 Interaction.MovableItem isMovable = hit.transform.gameObject.GetComponent<Interaction.MovableItem>();
-                mayUseItem = isMovable != null;
                 _itemToInteract = isMovable;
             }
             else
             {
-                mayUseItem = false;
                 _itemToInteract = null;
+                ShowTip(false);
+                return;
             }
-        }
 
-        private void Update()
-        {
-            if (mayUseItem && _itemToInteract != null)
+            if (_itemToInteract)
             {
-                if (!_uiTip.activeSelf)
-                    _uiTip.SetActive(true);
+                ShowTip(true);
 
                 if (Input.GetMouseButtonDown(0))
-                {
-                    _itemToInteract.transform.parent = this.transform;
-                    mayUseItem = false;
-                    _itemToInteract = null;
-                }
+                    _itemToInteract.ChangeObjectState(!_itemToInteract.isGrabbed, this.transform);
             }
+            else
+                ShowTip(false);
+        }
 
-            else if ((!mayUseItem || _itemToInteract == null) && _uiTip.activeSelf)
-                _uiTip.SetActive(false);
-            
+        private void ShowTip(bool state)
+        {
+            if (_uiTip.activeSelf != state)
+                _uiTip.SetActive(state);
         }
     }
 }
